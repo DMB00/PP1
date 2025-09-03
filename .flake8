@@ -1,43 +1,18 @@
 [flake8]
-# Максимальная длина строки (совместимость с Black)
-max-line-length = 88
+max-line-length = 120
 
-# Игнорируемые ошибки
-ignore =
-    E203,  # пробел перед ':' - конфликт с Black
-    W503,  # разрыв оператора перед бинарным оператором
-    E501,  # длина строки (уже контролируется max-line-length)
-    F401,  # неиспользуемый импорт (часто нужно для __init__.py)
-    F403,  # импорт с * (для __init__.py)
+ignore = E266, W503, E203
 
-# Максимальная сложность функций
-max-complexity = 15
-
-# Исключаемые директории
 exclude =
     .git,
     __pycache__,
     .venv,
     venv,
-    .mypy_cache,
-    .pytest_cache,
+    env,
     migrations,
-    node_modules,
-    build,
-    dist,
-    docs
+    .idea,
+    *.sqlite3,
+    settings.py
+import-order-style = pycharm
 
-# Включаемые файлы
-filename = *.py
-
-# Количество переносов строк в конце файла
-max-doc-length = 120
-
-# Показывать источник ошибки
-show-source = true
-
-# Статистика
-statistics = true
-
-# Формат вывода
-format = default
+max-complexity = 12
