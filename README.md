@@ -21,5 +21,9 @@ pip install pytest
 
 Виджет для быстрого просмотра
 
-## Изменения:
+## Тестирование
 Добавлены тестирования
+test_widget.py
+test_processing.py
+test_masks.py
+conftest.py

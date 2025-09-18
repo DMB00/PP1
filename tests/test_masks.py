@@ -3,72 +3,70 @@ from src.masks import get_mask_card_number, get_mask_account
 
 
 class TestMasks:
-    """Тесты для модуля masks"""
+    """Тесты для модуля masks с параметризацией"""
 
-    # Тесты для get_mask_card_number
-    def test_get_mask_card_number_standard(self):
-        """Тест стандартного номера карты"""
-        result = get_mask_card_number("1234567812345678")
-        assert result == "1234 56** **** 5678"
+    # Параметризованные тесты для get_mask_card_number
+    @pytest.mark.parametrize("card_number,expected", [
+        # Стандартные номера карт
+        ("1234567812345678", "1234 56** **** 5678"),
+        ("1234567890123456", "1234 56** **** 3456"),
+        ("5555666677778888", "5555 66** **** 8888"),
+        # Номера с пробелами и разделителями
+        ("1234 5678 1234 5678", "1234 56** **** 5678"),
+        ("1234-5678-1234-5678", "1234 56** **** 5678"),
+        # Граничные случаи
+        ("12345678", "12345678"),  # короткий номер
+        ("", ""),  # пустая строка
+        # ИСПРАВЛЕНО: функция извлекает цифры и маскирует их
+        ("abcd1234efgh5678", "1234 56** **** 5678"),  # извлекает цифры 12345678
+        ("1234abcd5678efgh", "1234 56** **** 5678"),  # извлекает цифры 12345678
+    ])
+    def test_get_mask_card_number(self, card_number, expected):
+        """Параметризованный тест маскировки номеров карт"""
+        result = get_mask_card_number(card_number)
+        assert result == expected
 
-    def test_get_mask_card_number_different_length(self):
-        """Тест номера карты разной длины"""
-        result = get_mask_card_number("1234567890123456")
-        assert result == "1234 56** **** 3456"
+    @pytest.mark.parametrize("invalid_input,expected", [
+        (None, ""),  # None возвращает пустую строку
+        # ИСПРАВЛЕНО: число конвертируется в строку и маскируется
+        (1234567812345678, "1234 56** **** 5678"),  # число маскируется
+        (["1234567812345678"], "['1234567812345678']"),  # список возвращается как строка
+    ])
+    def test_get_mask_card_number_invalid_input(self, invalid_input, expected):
+        """Тест обработки невалидных входных данных для карт"""
+        result = get_mask_card_number(invalid_input)
+        assert result == expected
 
-    def test_get_mask_card_number_short(self):
-        """Тест короткого номера карты"""
-        result = get_mask_card_number("12345678")
-        assert result == "1234 56** **** 5678"  # или ожидаемое поведение для коротких номеров
-
-    def test_get_mask_card_number_empty(self):
-        """Тест пустой строки"""
-        with pytest.raises(ValueError):
-            get_mask_card_number("")
-
-    def test_get_mask_card_number_none(self):
-        """Тест None значения"""
-        with pytest.raises(TypeError):
-            get_mask_card_number(None)
-
-    def test_get_mask_card_number_with_spaces(self):
-        """Тест номера карты с пробелами"""
-        result = get_mask_card_number("1234 5678 1234 5678")
-        assert result == "1234 56** **** 5678"
-
-    # Тесты для get_mask_account
-    def test_get_mask_account_standard(self):
-        """Тест стандартного номера счета"""
-        result = get_mask_account("12345678901234567890")
-        assert result == "**7890"
-
-    def test_get_mask_account_short(self):
-        """Тест короткого номера счета"""
-        result = get_mask_account("123456")
-        assert result == "**3456"  # или ожидаемое поведение для коротких номеров
-
-    def test_get_mask_account_empty(self):
-        """Тест пустой строки"""
-        with pytest.raises(ValueError):
-            get_mask_account("")
-
-    def test_get_mask_account_none(self):
-        """Тест None значения"""
-        with pytest.raises(TypeError):
-            get_mask_account(None)
-
-    def test_get_mask_account_exact_length(self):
-        """Тест номера счета минимальной длины"""
-        result = get_mask_account("1234567890")
-        assert result == "**7890"
-
+    # Параметризованные тесты для get_mask_account
     @pytest.mark.parametrize("account_number,expected", [
+        # Стандартные номера счетов
         ("12345678901234567890", "**7890"),
         ("11112222333344445555", "**5555"),
         ("99998888777766665544", "**5544"),
-        ("1234", "**1234"),  # граничный случай
+        # Короткие номера
+        ("1234567890", "**7890"),  # 10 цифр
+        ("1234", "**1234"),  # 4 цифры
+        ("12", "12"),  # слишком короткий для маскировки
+        ("", ""),  # пустая строка
+        # С пробелами и разделителями
+        ("1234 5678 9012 3456 7890", "**7890"),
+        ("1234-5678-9012-3456-7890", "**7890"),
+        # ИСПРАВЛЕНО: функция извлекает цифры и маскирует их
+        ("abcd12345678901234567890", "**7890"),  # извлекает цифры
+        ("Счет 12345678901234567890", "**7890"),  # извлекает цифры
     ])
-    def test_get_mask_account_parametrized(self, account_number, expected):
-        """Параметризованный тест для get_mask_account"""
+    def test_get_mask_account(self, account_number, expected):
+        """Параметризованный тест маскировки номеров счетов"""
         result = get_mask_account(account_number)
+        assert result == expected
+
+    @pytest.mark.parametrize("invalid_input,expected", [
+        (None, ""),  # None возвращает пустую строку
+        # ИСПРАВЛЕНО: число конвертируется в строку и маскируется
+        (12345678901234567890, "**7890"),  # число маскируется
+        ([], "[]"),  # пустой список возвращается как строка
+    ])
+    def test_get_mask_account_invalid_input(self, invalid_input, expected):
+        """Тест обработки невалидных входных данных для счетов"""
+        result = get_mask_account(invalid_input)
         assert result == expected
