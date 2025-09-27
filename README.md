@@ -27,3 +27,4 @@ test_widget.py
 test_processing.py
 test_masks.py
 conftest.py
+test_generators.py
