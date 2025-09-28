@@ -1,5 +1,4 @@
-from datetime import datetime
-from .masks import get_mask_card_number, get_mask_account
+from .masks import get_mask_account, get_mask_card_number
 
 
 def mask_account_card(account_info: str) -> str:
@@ -13,34 +12,32 @@ def mask_account_card(account_info: str) -> str:
         return f"Счет {masked_number}"
     else:
         # Ищем цифровую часть
-        digits = ''.join(filter(str.isdigit, account_info))
+        digits = "".join(filter(str.isdigit, account_info))
         if not digits:
             return account_info
 
         masked_number = get_mask_card_number(digits)
 
         # Сохраняем текстовую часть
-        text_part = ''.join(filter(lambda x: not x.isdigit(), account_info)).strip()
+        text_part = "".join(filter(lambda x: not x.isdigit(), account_info)).strip()
 
         return f"{text_part} {masked_number}"
 
 
 def get_date(date_string: str) -> str:
-    """
-    Преобразует дату из формата ISO в формат DD.MM.YYYY
-    """
+    """Преобразует дату из формата ISO в формат DD.MM.YYYY."""
     if date_string is None:
         raise TypeError("Дата не может быть None")
 
     try:
         # Обрабатываем различные форматы
-        if 'T' in date_string:
-            date_part = date_string.split('T')[0]
+        if "T" in date_string:
+            date_part = date_string.split("T")[0]
         else:
             date_part = date_string
 
         # Парсим дату
-        year, month, day = date_part.split('-')
+        year, month, day = date_part.split("-")
         return f"{int(day):02d}.{int(month):02d}.{year}"
 
     except (ValueError, AttributeError, TypeError) as e:
