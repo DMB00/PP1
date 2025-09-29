@@ -1,23 +1,3 @@
-def filter_by_currency(transactions, currency):
-    """
-    Фильтрует транзакции по заданной валюте.
-
-    Args:
-        transactions: список словарей с транзакциями
-        currency: код валюты для фильтрации (например, "USD")
-
-    Yields:
-        dict: транзакции с заданной валютой
-    """
-    for transaction in transactions:
-        try:
-            if transaction['operationAmount']['currency']['code'] == currency:
-                yield transaction
-        except (KeyError, TypeError):
-            # Пропускаем транзакции с некорректной структурой
-            continue
-
-
 def transaction_descriptions(transactions):
     """
     Генератор, который возвращает описание каждой транзакции по очереди.

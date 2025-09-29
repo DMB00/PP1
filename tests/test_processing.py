@@ -58,4 +58,3 @@ class TestProcessing:
 
     def test_sort_by_date_same_dates(self, transactions_with_same_date):
         """Тест сортировки с одинаковыми датами"""
-        result = sort_by_date(transactions_with_same_date)
