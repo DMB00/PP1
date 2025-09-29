@@ -1,34 +1,44 @@
-def mask_card_number(card_number: str) -> str:
-    """Маскирует номер карты."""
-    cleaned_number = "".join(filter(str.isdigit, card_number))
-    if len(cleaned_number) != 16:
-        return card_number
-    return f"{cleaned_number[:4]} {cleaned_number[4:6]}** **** {cleaned_number[-4:]}"
-
-
-def mask_account_number(account_number: str) -> str:
-    """Маскирует номер счета."""
-    cleaned_number = "".join(filter(str.isdigit, account_number))
-    if len(cleaned_number) < 4:
-        return account_number
-    return f"**{cleaned_number[-4:]}"
+from .masks import get_mask_account, get_mask_card_number
 
 
 def mask_account_card(account_info: str) -> str:
     """Маскирует номер счета или карты в переданной строке."""
+    if not account_info:
+        return ""
+
     if "Счет" in account_info:
         account_number = account_info.split("Счет")[-1].strip()
-        masked_number = mask_account_number(account_number)
+        masked_number = get_mask_account(account_number)
         return f"Счет {masked_number}"
     else:
-        for part in reversed(account_info.split()):
-            if part.isdigit():
-                card_number = part
-                break
+        # Ищем цифровую часть
+        digits = "".join(filter(str.isdigit, account_info))
+        if not digits:
+            return account_info
+
+        masked_number = get_mask_card_number(digits)
+
+        # Сохраняем текстовую часть
+        text_part = "".join(filter(lambda x: not x.isdigit(), account_info)).strip()
+
+        return f"{text_part} {masked_number}"
+
+
+def get_date(date_string: str) -> str:
+    """Преобразует дату из формата ISO в формат DD.MM.YYYY."""
+    if date_string is None:
+        raise TypeError("Дата не может быть None")
+
+    try:
+        # Обрабатываем различные форматы
+        if "T" in date_string:
+            date_part = date_string.split("T")[0]
         else:
-            card_number = account_info
+            date_part = date_string
 
-        masked_number = mask_card_number(card_number)
-        card_name = account_info.rsplit(card_number, 1)[0].strip()
+        # Парсим дату
+        year, month, day = date_part.split("-")
+        return f"{int(day):02d}.{int(month):02d}.{year}"
 
-        return f"{card_name} {masked_number}"
+    except (ValueError, AttributeError, TypeError) as e:
+        raise ValueError(f"Неверный формат даты: {date_string}") from e
