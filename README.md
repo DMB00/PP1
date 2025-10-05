@@ -28,3 +28,4 @@ test_processing.py
 test_masks.py
 conftest.py
 test_generators.py
+test_decorators
