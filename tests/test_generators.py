@@ -242,3 +242,44 @@ def test_generators_are_iterators(sample_transactions):
     card_gen = card_number_generator(1, 5)
     assert hasattr(card_gen, '__iter__')
     assert hasattr(card_gen, '__next__')
+
+
+def test_filter_by_currency_edge_cases():
+    """Тест граничных случаев фильтрации по валюте."""
+    # Транзакции с некорректной структурой
+    invalid_transactions = [
+        {"id": 1},  # Нет operationAmount
+        {"id": 2, "operationAmount": {}},  # Нет currency
+        {"id": 3, "operationAmount": {"currency": {}}},  # Нет code
+        {"id": 4, "operationAmount": {"currency": {"code": "USD"}}}  # Корректная
+    ]
+
+    usd_transactions = list(filter_by_currency(invalid_transactions, "USD"))
+    assert len(usd_transactions) == 1
+    assert usd_transactions[0]["id"] == 4
+
+
+def test_card_number_generator_edge_cases():
+    """Тест граничных случаев генератора номеров карт."""
+    # Диапазон 0-0
+    cards = list(card_number_generator(0, 0))
+    assert len(cards) == 1
+    assert cards[0] == "0000 0000 0000 0000"
+
+    # Большой диапазон
+    cards = list(card_number_generator(9999999999999999, 9999999999999999))
+    assert len(cards) == 1
+    assert "9999 9999 9999 9999" in cards[0]
+
+
+def test_transaction_descriptions_with_invalid_data():
+    """Тест генератора описаний с некорректными данными."""
+    transactions = [
+        {"description": "Test 1"},
+        {"no_description": "No desc"},  # Нет поля description
+        {"description": "Test 2"}
+    ]
+
+    # Должен обрабатывать только транзакции с description
+    with pytest.raises(KeyError):
+        list(transaction_descriptions(transactions))

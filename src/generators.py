@@ -1,34 +1,6 @@
-def transaction_descriptions(transactions):
-    """
-    Генератор, который возвращает описание каждой транзакции по очереди.
-
-    Args:
-        transactions: список словарей с транзакциями
-
-    Yields:
-        str: описание транзакции
-    """
-    for transaction in transactions:
-        yield transaction['description']
-
-
-def card_number_generator(start, end):
-    """
-    Генератор номеров банковских карт в формате XXXX XXXX XXXX XXXX.
-
-    Args:
-        start: начальный номер (от 1 до 9999)
-        end: конечный номер (от 1 до 9999, должен быть >= start)
-
-    Yields:
-        str: номер карты в формате XXXX XXXX XXXX XXXX
-    """
-    for number in range(start, end + 1):
-        # Форматируем номер с ведущими нулями до 16 цифр
-        card_number = str(number).zfill(16)
-        # Разбиваем на группы по 4 цифры
-        formatted_number = ' '.join([card_number[i:i + 4] for i in range(0, 16, 4)])
-        yield formatted_number
+"""
+Модуль generators содержит функции-генераторы для обработки данных транзакций.
+"""
 
 
 def filter_by_currency(transactions: list, currency: str):
@@ -48,33 +20,35 @@ def filter_by_currency(transactions: list, currency: str):
         if currency_info.get('code') == currency:
             yield transaction
 
-        def transaction_descriptions(transactions: list):
-            """
-            Генератор, который возвращает описание каждой транзакции по очереди.
 
-            Args:
-                transactions: список словарей с транзакциями
+def transaction_descriptions(transactions: list):
+    """
+    Генератор, который возвращает описание каждой транзакции по очереди.
 
-            Yields:
-                str: описание транзакции
-            """
-            for transaction in transactions:
-                yield transaction['description']
+    Args:
+        transactions: список словарей с транзакциями
 
-            def card_number_generator(start: int, end: int):
-                """
-                Генератор номеров банковских карт в формате XXXX XXXX XXXX XXXX.
+    Yields:
+        str: описание транзакции
+    """
+    for transaction in transactions:
+        yield transaction['description']
 
-                Args:
-                    start: начальный номер (от 1 до 9999999999999999)
-                    end: конечный номер (должен быть >= start)
 
-                Yields:
-                    str: номер карты в формате XXXX XXXX XXXX XXXX
-                """
-                for number in range(start, end + 1):
-                    # Форматируем номер с ведущими нулями до 16 цифр
-                    card_number = str(number).zfill(16)
-                    # Разбиваем на группы по 4 цифры с пробелами
-                    formatted_number = f"{card_number[:4]} {card_number[4:8]} {card_number[8:12]} {card_number[12:16]}"
-                    yield formatted_number
+def card_number_generator(start: int, end: int):
+    """
+    Генератор номеров банковских карт в формате XXXX XXXX XXXX XXXX.
+
+    Args:
+        start: начальный номер (от 1 до 9999999999999999)
+        end: конечный номер (должен быть >= start)
+
+    Yields:
+        str: номер карты в формате XXXX XXXX XXXX XXXX
+    """
+    for number in range(start, end + 1):
+        # Форматируем номер с ведущими нулями до 16 цифр
+        card_number = str(number).zfill(16)
+        # Разбиваем на группы по 4 цифры с пробелами
+        formatted_number = f"{card_number[:4]} {card_number[4:8]} {card_number[8:12]} {card_number[12:16]}"
+        yield formatted_number

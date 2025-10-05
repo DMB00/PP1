@@ -115,3 +115,49 @@ def validate_currency(func: Callable) -> Callable:
         return func(*args, **kwargs)
 
     return wrapper
+
+
+from datetime import datetime
+from functools import wraps
+
+
+def log(filename: str = None):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            func_name = func.__name__
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+            if filename:
+                with open(filename, 'a', encoding='utf-8') as f:
+                    f.write(f"{timestamp} - {func_name} - вызвана\n")
+            else:
+                print(f"{timestamp} - {func_name} - вызвана")
+
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def cache(func):
+    """
+    Декоратор для кэширования результатов функции.
+    """
+    cache_dict = {}
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Создаем ключ на основе аргументов
+        key = (args, tuple(sorted(kwargs.items())))
+
+        if key not in cache_dict:
+            cache_dict[key] = func(*args, **kwargs)
+
+        return cache_dict[key]
+
+    # Добавляем метод для очистки кэша
+    wrapper.cache_clear = lambda: cache_dict.clear()
+
+    return wrapper
