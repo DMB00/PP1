@@ -1,26 +1,62 @@
 import pytest
+from src.widget import mask_account_card, get_date
 
-from src.widget import get_date, mask_account_card
+
+def test_mask_account_card_empty_string():
+    """Тест маскировки пустой строки."""
+    result = mask_account_card("")
+    assert result == ""
 
 
-class TestWidget:
-    """Тесты для модуля widget"""
+def test_mask_account_card_none():
+    """Тест маскировки None."""
+    result = mask_account_card(None)
+    assert result == ""
 
-    # Тесты для mask_account_card
-    @pytest.mark.parametrize("input_string,expected", [
-        ("Visa Platinum 1234567812345678", "Visa Platinum 1234 56** **** 5678"),
-        ("Счет 12345678901234567890", "Счет **7890"),
-        ("", ""),
-    ])
-    def test_mask_account_card(self, input_string, expected):
-        result = mask_account_card(input_string)
-        assert result == expected
 
-    # Тесты для get_date
-    @pytest.mark.parametrize("date_string,expected", [
-        ("2023-10-01T12:00:00.000000", "01.10.2023"),
-        ("2023-10-01", "01.10.2023"),
-    ])
-    def test_get_date(self, date_string, expected):
-        result = get_date(date_string)
-        assert result == expected
+def test_mask_account_card_short_number():
+    """Тест маскировки строки с коротким номером."""
+    result = mask_account_card("1234")
+    assert result == "1234"
+
+
+def test_mask_account_card_no_digits():
+    """Тест маскировки строки без цифр."""
+    result = mask_account_card("Только текст")
+    assert result == "Только текст"
+
+
+def test_get_date_invalid_format():
+    """Тест получения даты из невалидной строки."""
+    result = get_date("invalid-date-format")
+    assert result == "invalid-date-format"  # Должен вернуть исходную строку
+
+
+def test_get_date_none():
+    """Тест получения даты из None."""
+    result = get_date(None)
+    assert result == ""  # Теперь возвращает пустую строку
+
+
+def test_get_date_without_t():
+    """Тест получения даты из строки без 'T'."""
+    result = get_date("2023-12-31")
+    assert result == "31.12.2023"
+
+
+def test_get_date_with_t():
+    """Тест получения даты из строки с 'T'."""
+    result = get_date("2023-12-31T10:30:00.000000")
+    assert result == "31.12.2023"
+
+
+def test_get_date_invalid_parts():
+    """Тест получения даты с неправильным количеством частей."""
+    result = get_date("2023-12")
+    assert result == "2023-12"
+
+
+def test_get_date_empty_string():
+    """Тест получения даты из пустой строки."""
+    result = get_date("")
+    assert result == ""

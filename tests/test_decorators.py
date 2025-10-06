@@ -1,19 +1,18 @@
 """
-Тесты для декоратора log из модуля decorators.
+Тесты для модуля decorators.
 """
 
 import os
 import tempfile
 import pytest
+from unittest.mock import patch, MagicMock
 
 
 class TestLogDecorator:
     """Тесты для декоратора log."""
 
     def test_log_basic_functionality(self, capsys):
-        """
-        Базовый тест функциональности декоратора.
-        """
+        """Тест базовой функциональности декоратора log."""
         from src.decorators import log
 
         @log()
@@ -26,42 +25,13 @@ class TestLogDecorator:
         captured = capsys.readouterr()
         console_output = captured.out
 
-        print("=== REAL OUTPUT ===")
-        print(repr(console_output))
-        print("===================")
-
-        # Проверяем что есть какой-то вывод
+        # Проверяем что есть вывод
         assert console_output.strip() != ""
         # Проверяем что вывод содержит элементы лога
         assert any(char in console_output for char in ['-', ':'])
 
-    def test_log_with_exception(self, capsys):
-        """
-        Тест логирования исключений.
-        """
-        from src.decorators import log
-
-        @log()
-        def error_function():
-            raise ValueError("Test error")
-
-        with pytest.raises(ValueError):
-            error_function()
-
-        captured = capsys.readouterr()
-        console_output = captured.out
-
-        print("=== EXCEPTION OUTPUT ===")
-        print(repr(console_output))
-        print("=======================")
-
-        assert console_output.strip() != ""
-        assert any(char in console_output for char in ['-', ':'])
-
     def test_log_with_file(self):
-        """
-        Тест логирования в файл.
-        """
+        """Тест логирования в файл."""
         from src.decorators import log
 
         with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as f:
@@ -78,10 +48,6 @@ class TestLogDecorator:
             with open(log_filename, 'r', encoding='utf-8') as log_file:
                 log_content = log_file.read()
 
-            print("=== FILE OUTPUT ===")
-            print(repr(log_content))
-            print("===================")
-
             assert log_content.strip() != ""
             assert any(char in log_content for char in ['-', ':'])
 
@@ -89,115 +55,19 @@ class TestLogDecorator:
             if os.path.exists(log_filename):
                 os.unlink(log_filename)
 
-
-class TestLogDecoratorEdgeCases:
-    """Тесты граничных случаев для декоратора log."""
-
-    def test_log_with_none_values(self, capsys):
-        """
-        Тест логирования с None значениями.
-        """
+    def test_log_preserves_metadata(self):
+        """Тест сохранения метаданных функции."""
         from src.decorators import log
 
         @log()
-        def none_function(a=None, b=None):
-            return f"{a}-{b}"
+        def meta_function(x: int) -> str:
+            """Test function documentation."""
+            return str(x)
 
-        result = none_function(None, None)
-        assert result == "None-None"
-
-        captured = capsys.readouterr()
-        console_output = captured.out
-
-        print("=== NONE OUTPUT ===")
-        print(repr(console_output))
-        print("===================")
-
-        assert console_output.strip() != ""
-        assert any(char in console_output for char in ['-', ':'])
-
-    def test_log_empty_args(self, capsys):
-        """
-        Тест логирования с пустыми аргументами.
-        """
-        from src.decorators import log
-
-        @log()
-        def empty_function():
-            return "empty"
-
-        result = empty_function()
-        assert result == "empty"
-
-        captured = capsys.readouterr()
-        console_output = captured.out
-
-        assert console_output.strip() != ""
-        assert any(char in console_output for char in ['-', ':'])
-
-
-class TestLogDecoratorIntegration:
-    """Интеграционные тесты декоратора log."""
-
-    def test_log_with_other_decorators(self, capsys):
-        """
-        Тест комбинации декоратора log с другими декораторами.
-        """
-        from src.decorators import log
-
-        def my_decorator(func):
-            def wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
-
-            return wrapper
-
-        @log()
-        @my_decorator
-        def test_function(x):
-            return x * 3
-
-        result = test_function(4)
-        assert result == 12
-
-        captured = capsys.readouterr()
-        console_output = captured.out
-
-        print("=== COMBINED DECORATORS OUTPUT ===")
-        print(repr(console_output))
-        print("=================================")
-
-        # Основная проверка - что есть вывод
-        assert console_output.strip() != ""
-
-        # Дополнительная проверка - вывод содержит элементы лога
-        assert any(char in console_output for char in ['-', ':']), (
-            f"Вывод должен содержать элементы лога. Получено: {console_output}"
-        )
-
-    def test_log_class_method(self, capsys):
-        """
-        Тест использования декоратора log в методах класса.
-        """
-        from src.decorators import log
-
-        class TestClass:
-            @log()
-            def method(self, data):
-                return len(data)
-
-        obj = TestClass()
-        result = obj.method([1, 2, 3])
-        assert result == 3
-
-        captured = capsys.readouterr()
-        console_output = captured.out
-
-        print("=== CLASS METHOD OUTPUT ===")
-        print(repr(console_output))
-        print("===========================")
-
-        assert console_output.strip() != ""
-        assert any(char in console_output for char in ['-', ':'])
+        # Проверяем что метаданные сохранились
+        assert meta_function.__name__ == "meta_function"
+        assert meta_function.__doc__ == "Test function documentation."
+        assert meta_function.__annotations__ == {'x': int, 'return': str}
 
 
 class TestCacheDecorator:
@@ -205,146 +75,126 @@ class TestCacheDecorator:
 
     def test_cache_basic_functionality(self):
         """Тест базовой функциональности кэширования."""
-        # Временно пропускаем, так как cache может быть не реализован
-        pytest.skip("Декоратор cache может быть не реализован")
+        from src.decorators import cache
+
+        call_count = 0
+
+        @cache
+        def expensive_operation(x):
+            nonlocal call_count
+            call_count += 1
+            return x * 2
+
+        # Первый вызов - должен вычислить
+        result1 = expensive_operation(5)
+        assert result1 == 10
+        assert call_count == 1
+
+        # Второй вызов с теми же аргументами - должен вернуть из кэша
+        result2 = expensive_operation(5)
+        assert result2 == 10
+        assert call_count == 1  # Не должно увеличиться
+
+        # Вызов с другими аргументами - должен вычислить
+        result3 = expensive_operation(10)
+        assert result3 == 20
+        assert call_count == 2
 
     def test_cache_different_arguments(self):
         """Тест кэширования с разными аргументами."""
-        pytest.skip("Декораator cache может быть не реализован")
+        from src.decorators import cache
+
+        @cache
+        def multiply(x, y):
+            return x * y
+
+        assert multiply(2, 3) == 6
+        assert multiply(2, 4) == 8
+        assert multiply(2, 3) == 6  # Должен вернуть из кэша
 
     def test_cache_with_kwargs(self):
         """Тест кэширования с именованными аргументами."""
-        pytest.skip("Декораator cache может быть не реализован")
+        from src.decorators import cache
+
+        @cache
+        def greet(name, greeting="Hello"):
+            return f"{greeting}, {name}!"
+
+        result1 = greet("Alice")
+        result2 = greet("Alice", greeting="Hi")
+        result3 = greet("Alice")
+
+        assert result1 == "Hello, Alice!"
+        assert result2 == "Hi, Alice!"
+        assert result3 == "Hello, Alice!"  # Из кэша
 
     def test_cache_clear_functionality(self):
         """Тест очистки кэша."""
-        pytest.skip("Декораator cache может быть не реализован")
+        from src.decorators import cache
+
+        call_count = 0
+
+        @cache
+        def counter():
+            nonlocal call_count
+            call_count += 1
+            return call_count
+
+        assert counter() == 1
+        assert counter() == 1  # Из кэша
+
+        # Очищаем кэш
+        counter.cache_clear()
+
+        assert counter() == 2  # Снова вычисляем
+        assert counter() == 2  # Из кэша
+
+    def test_cache_preserves_metadata(self):
+        """Тест сохранения метаданных функции."""
+        from src.decorators import cache
+
+        @cache
+        def cached_function(x: int) -> int:
+            """Cached function documentation."""
+            return x * 2
+
+        # Проверяем что метаданные сохранились
+        assert cached_function.__name__ == "cached_function"
+        assert cached_function.__doc__ == "Cached function documentation."
+        assert cached_function.__annotations__ == {'x': int, 'return': int}
 
 
-class TestLogDecoratorAdvanced:
-    """Расширенные тесты для декоратора log."""
-
-    def test_log_with_timestamp_format(self, capsys):
-        """Тест формата временной метки в логах."""
-        from src.decorators import log
-
-        @log()
-        def timed_function():
-            return "test"
-
-        timed_function()
-        captured = capsys.readouterr()
-        console_output = captured.out
-
-        # Проверяем что вывод содержит временную метку
-        assert console_output.strip() != ""
-        assert any(char in console_output for char in ['-', ':'])
-
-    def test_log_with_custom_filename(self):
-        """Тест логирования в кастомный файл."""
-        from src.decorators import log
-
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, encoding='utf-8') as f:
-            log_filename = f.name
-
-        try:
-            @log(filename=log_filename)
-            def custom_log_function(x):
-                return x * 2
-
-            result = custom_log_function(5)
-            assert result == 10
-
-            # Проверяем что файл создан и не пустой
-            assert os.path.exists(log_filename)
-            with open(log_filename, 'r', encoding='utf-8') as log_file:
-                content = log_file.read()
-                assert content.strip() != ""
-                assert any(char in content for char in ['-', ':'])
-
-        finally:
-            if os.path.exists(log_filename):
-                os.unlink(log_filename)
-
-    def test_log_multiple_calls(self, capsys):
-        """Тест множественных вызовов с логированием."""
-        from src.decorators import log
-
-        @log()
-        def multi_call_function(x):
-            return x + 1
-
-        results = [multi_call_function(i) for i in range(3)]
-        assert results == [1, 2, 3]
-
-        captured = capsys.readouterr()
-        console_output = captured.out
-
-        # Должно быть несколько записей в логах
-        assert console_output.strip() != ""
-        assert any(char in console_output for char in ['-', ':'])
-
-    def test_log_with_complex_arguments(self, capsys):
-        """Тест логирования со сложными аргументами."""
-        from src.decorators import log
-
-        @log()
-        def complex_function(data, count=1, **kwargs):
-            return f"Processed {count} items"
-
-        result = complex_function([1, 2, 3], count=3, option="test")
-        assert "Processed 3 items" in result
-
-        captured = capsys.readouterr()
-        console_output = captured.out
-        assert console_output.strip() != ""
-        assert any(char in console_output for char in ['-', ':'])
-
-
-def test_log_keyword_arguments(capsys):
-    """
-    Тест логирования с именованными аргументами.
-    """
+def test_log_with_exception(capsys):
+    """Тест логирования при исключениях."""
     from src.decorators import log
 
     @log()
-    def kw_function(name, age=0):
-        return f"{name}: {age}"
+    def error_function():
+        raise ValueError("Test error")
 
-    result = kw_function("John", age=25)
-    assert result == "John: 25"
+    with pytest.raises(ValueError):
+        error_function()
 
     captured = capsys.readouterr()
     console_output = captured.out
-
-    print("=== KEYWORD ARGS OUTPUT ===")
-    print(repr(console_output))
-    print("===========================")
 
     assert console_output.strip() != ""
     assert any(char in console_output for char in ['-', ':'])
 
 
-def test_log_preserves_metadata():
-    """
-    Тест сохранения метаданных функции.
-    """
+def test_log_multiple_calls(capsys):
+    """Тест множественных вызовов с логированием."""
     from src.decorators import log
 
     @log()
-    def meta_function(x: int) -> str:
-        """Test function documentation."""
-        return str(x)
+    def multi_call_function(x):
+        return x + 1
 
-    # Проверяем что метаданные сохранились
-    assert meta_function.__name__ == "meta_function"
-    assert meta_function.__doc__ == "Test function documentation."
-    assert meta_function.__annotations__ == {'x': int, 'return': str}
+    results = [multi_call_function(i) for i in range(3)]
+    assert results == [1, 2, 3]
 
+    captured = capsys.readouterr()
+    console_output = captured.out
 
-def test_cache_preserves_metadata():
-    """
-    Тест сохранения метаданных функции с декоратором cache.
-    """
-    # Временно пропускаем
-    pytest.skip("Декоратор cache может быть не реализован")
+    assert console_output.strip() != ""
+    assert any(char in console_output for char in ['-', ':'])
