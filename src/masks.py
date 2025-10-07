@@ -1,56 +1,44 @@
 def get_mask_card_number(card_number: str) -> str:
-    """
-    Маскирует номер банковской карты.
+    """Маскирует номер банковской карты."""
+    if card_number is None:
+        return ""
 
-    Формат: XXXX XX** **** XXXX
-    Показываются первые 6 и последние 4 цифры, остальные заменяются на *
+    # Если это не строка - возвращаем как есть (без маскировки)
+    if not isinstance(card_number, str):
+        return str(card_number)
 
-    Args:
-        card_number (str): Номер карты (16 цифр)
+    # Извлекаем только цифры
+    digits = ""
+    for char in card_number:
+        if char in "0123456789":
+            digits += char
 
-    Returns:
-        str: Замаскированный номер карты
+    # Проверяем длину
+    if len(digits) != 16:
+        return card_number  # возвращаем исходную строку если не 16 цифр
 
-    Raises:
-        ValueError: Если номер карты не состоит из 16 цифр
-    """
-    # Удаляем все пробелы и нецифровые символы
-    cleaned_number = "".join(filter(str.isdigit, card_number))
-
-    # Проверяем, что номер состоит из 16 цифр
-    if len(cleaned_number) != 16:
-        raise ValueError("Номер карты должен содержать 16 цифр")
-
-    # Маскируем номер: первые 6 и последние 4 цифры видимы, остальные *
-    masked = cleaned_number[:4] + " " + cleaned_number[4:6] + "** **** " + cleaned_number[-4:]
-
-    return masked
+    # Форматируем замаскированный номер
+    return f"{digits[:4]} {digits[4:6]}** **** {digits[-4:]}"
 
 
 def get_mask_account(account_number: str) -> str:
-    """
-    Маскирует номер банковского счета.
+    """Маскирует номер счета."""
+    if account_number is None:
+        return ""
 
-    Формат: **XXXX
-    Показываются только последние 4 цифры, остальные заменяются на *
+    # Если это не строка - возвращаем как есть (без маскировки)
+    if not isinstance(account_number, str):
+        return str(account_number)
 
-    Args:
-        account_number (str): Номер счета
+    # Извлекаем только цифры
+    digits = ""
+    for char in account_number:
+        if char in "0123456789":
+            digits += char
 
-    Returns:
-        str: Замаскированный номер счета
+    # Проверяем длину
+    if len(digits) < 4:
+        return account_number  # возвращаем исходную строку если меньше 4 цифр
 
-    Raises:
-        ValueError: Если номер счета содержит меньше 4 цифр
-    """
-    # Удаляем все пробелы и нецифровые символы
-    cleaned_number = "".join(filter(str.isdigit, account_number))
-
-    # Проверяем, что номер содержит хотя бы 4 цифры
-    if len(cleaned_number) < 4:
-        raise ValueError("Номер счета должен содержать минимум 4 цифры")
-
-    # Маскируем номер: показываем только последние 4 цифры
-    masked = "**" + cleaned_number[-4:]
-
-    return masked
+    # Форматируем замаскированный номер
+    return f"**{digits[-4:]}"
