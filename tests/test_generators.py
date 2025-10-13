@@ -278,7 +278,7 @@ def test_transaction_descriptions_with_invalid_data():
         {"description": "Test 1"},
         {"no_description": "No desc"},  # Нет поля description
         {"description": "Test 2"}
-    ]
+   ]
 
     # Должен обрабатывать только транзакции с description
     with pytest.raises(KeyError):
