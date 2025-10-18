@@ -1,28 +1,83 @@
-# Создайте test.py файл и запустите его
-from src.masks import get_mask_account, get_mask_card_number
+import pytest
 
-# Тестируем проблемные случаи
-test_cases = [
-    "abcd1234efgh5678",
-    "1234abcd5678efgh",
-    "1234 5678 1234 5678",
-    "1234-5678-1234-5678",
-    ["1234567812345678"],
-    [1234567812345678],
-    1234567812345678
-]
 
-print("=" * 50)
-print("ТЕСТИРОВАНИЕ ФУНКЦИЙ")
-print("=" * 50)
+@pytest.fixture
+def sample_transactions():
+    """Фикстура с тестовыми данными для обработки транзакций"""
+    return [
+        {
+            "id": 1,
+            "state": "EXECUTED",
+            "date": "2023-10-01T12:00:00.000000",
+            "operationAmount": {"amount": "100.00", "currency": {"name": "USD"}},
+            "description": "Перевод",
+            "from": "Счет 12345678901234567890",
+            "to": "Счет 09876543210987654321"
+        },
+        {
+            "id": 2,
+            "state": "PENDING",
+            "date": "2023-09-15T08:30:00.000000",
+            "operationAmount": {"amount": "50.00", "currency": {"name": "RUB"}},
+            "description": "Покупка",
+            "from": "Visa Platinum 1234567812345678",
+            "to": "Счет 1111222233334444"
+        },
+        {
+            "id": 3,
+            "state": "EXECUTED",
+            "date": "2023-11-20T16:45:00.000000",
+            "operationAmount": {"amount": "200.00", "currency": {"name": "EUR"}},
+            "description": "Оплата услуг",
+            "from": "MasterCard 5555666677778888",
+            "to": "Счет 9999888877776666"
+        },
+        {
+            "id": 4,
+            "state": "CANCELED",
+            "date": "2023-08-05T10:15:00.000000",
+            "operationAmount": {"amount": "75.50", "currency": {"name": "RUB"}},
+            "description": "Возврат",
+            "from": "Maestro 1234123412341234",
+            "to": "Счет 5555666677778888"
+        },
+        {
+            "id": 5,
+            "state": "EXECUTED",
+            "date": "2023-12-25T00:00:00.000000",
+            "operationAmount": {"amount": "300.00", "currency": {"name": "USD"}},
+            "description": "Подарок",
+            "to": "Счет 1234123412341234"
+        }
+    ]
 
-for i, case in enumerate(test_cases, 1):
-    print(f"\nТест {i}:")
-    print(f"Вход: {case!r}")
-    print(f"Тип: {type(case)}")
 
-    card_result = get_mask_card_number(case)
-    print(f"Карта: {card_result!r}")
+@pytest.fixture
+def empty_transactions():
+    """Фикстура с пустым списком транзакций"""
+    return []
 
-    account_result = get_mask_account(case)
-    print(f"Счет: {account_result!r}")
+
+@pytest.fixture
+def transactions_with_same_date():
+    """Фикстура с транзакциями с одинаковыми датами"""
+    return [
+        {
+            "id": 1,
+            "state": "EXECUTED",
+            "date": "2023-10-01T12:00:00.000000",
+            "operationAmount": {"amount": "100.00", "currency": {"name": "USD"}}
+        },
+        {
+            "id": 2,
+            "state": "EXECUTED",
+            "date": "2023-10-01T12:00:00.000000",
+            "operationAmount": {"amount": "200.00", "currency": {"name": "EUR"}}
+        },
+        {
+            "id": 3,
+            "state": "EXECUTED",
+            "date": "2023-10-01T08:00:00.000000",
+            "operationAmount": {"amount": "300.00", "currency": {"name": "RUB"}}
+        }
+    ]
