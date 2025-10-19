@@ -12,6 +12,7 @@ git clone https://github.com/DMB00/PP1.git
 pip install mypy
 pip install isort
 pip install black
+pip install pytest
 ```
 ## Примеры использования:
 Финансовая аналитика
@@ -19,3 +20,12 @@ pip install black
 Бухгалтерская отчетность
 
 Виджет для быстрого просмотра
+
+## Тестирование
+Добавлены тестирования
+test_widget.py
+test_processing.py
+test_masks.py
+conftest.py
+test_generators.py
+test_decorators

@@ -1,56 +1,113 @@
+from .logger_config import setup_logger
+
+# Создаем логгер для модуля masks с принудительным пересозданием
+logger = setup_logger('masks', force_recreate=True)
+
+
 def get_mask_card_number(card_number: str) -> str:
     """
     Маскирует номер банковской карты.
-
-    Формат: XXXX XX** **** XXXX
-    Показываются первые 6 и последние 4 цифры, остальные заменяются на *
-
-    Args:
-        card_number (str): Номер карты (16 цифр)
-
-    Returns:
-        str: Замаскированный номер карты
-
-    Raises:
-        ValueError: Если номер карты не состоит из 16 цифр
+    Обрабатывает номера с пробелами, дефисами и другими разделителями.
     """
-    # Удаляем все пробелы и нецифровые символы
-    cleaned_number = "".join(filter(str.isdigit, card_number))
+    logger.debug(f"Starting card number masking: {card_number}")
 
-    # Проверяем, что номер состоит из 16 цифр
-    if len(cleaned_number) != 16:
-        raise ValueError("Номер карты должен содержать 16 цифр")
+    # Обработка None и не-строк
+    if card_number is None:
+        logger.warning("None received for card masking")
+        return ""
 
-    # Маскируем номер: первые 6 и последние 4 цифры видимы, остальные *
-    masked = cleaned_number[:4] + " " + cleaned_number[4:6] + "** **** " + cleaned_number[-4:]
+    if not isinstance(card_number, str):
+        logger.warning(f"Non-string input received for card masking: {type(card_number)} - {card_number}")
+        return str(card_number)
 
-    return masked
+    # Обработка пустой строки
+    if not card_number.strip():
+        logger.warning("Empty string received for card masking")
+        return card_number
+
+    # Извлекаем только цифры из строки
+    digits_only = ''.join(filter(str.isdigit, card_number))
+    logger.debug(f"Extracted digits from card number: {digits_only}")
+
+    # Проверяем длину цифрового номера
+    if len(digits_only) != 16:
+        logger.warning(
+            f"Card number doesn't contain exactly 16 digits: {len(digits_only)} digits found in '{card_number}'")
+        return card_number  # Возвращаем исходную строку если не 16 цифр
+
+    try:
+        # Форматируем маскированный номер
+        masked_number = f"{digits_only[:4]} {digits_only[4:6]}** **** {digits_only[-4:]}"
+        logger.info(f"Card masked successfully: {card_number} -> {masked_number}")
+        return masked_number
+    except Exception as e:
+        logger.error(f"Error masking card {card_number}: {e}")
+        return card_number  # Возвращаем исходную строку при ошибке
 
 
 def get_mask_account(account_number: str) -> str:
     """
     Маскирует номер банковского счета.
-
-    Формат: **XXXX
-    Показываются только последние 4 цифры, остальные заменяются на *
-
-    Args:
-        account_number (str): Номер счета
-
-    Returns:
-        str: Замаскированный номер счета
-
-    Raises:
-        ValueError: Если номер счета содержит меньше 4 цифр
+    Обрабатывает номера с пробелами, дефисами, текстом и другими символами.
     """
-    # Удаляем все пробелы и нецифровые символы
-    cleaned_number = "".join(filter(str.isdigit, account_number))
+    logger.debug(f"Starting account number masking: {account_number}")
 
-    # Проверяем, что номер содержит хотя бы 4 цифры
-    if len(cleaned_number) < 4:
-        raise ValueError("Номер счета должен содержать минимум 4 цифры")
+    # Обработка None и не-строк
+    if account_number is None:
+        logger.warning("None received for account masking")
+        return ""
 
-    # Маскируем номер: показываем только последние 4 цифры
-    masked = "**" + cleaned_number[-4:]
+    if not isinstance(account_number, str):
+        logger.warning(f"Non-string input received for account masking: {type(account_number)} - {account_number}")
+        return str(account_number)
 
-    return masked
+    # Обработка пустой строки
+    if not account_number.strip():
+        logger.warning("Empty string received for account masking")
+        return account_number
+
+    # Извлекаем только цифры из строки
+    digits_only = ''.join(filter(str.isdigit, account_number))
+    logger.debug(f"Extracted digits from account number: {digits_only}")
+
+    # Проверяем минимальную длину цифрового номера
+    if len(digits_only) < 4:
+        logger.warning(
+            f"Account number doesn't contain at least 4 digits: {len(digits_only)} digits found in '{account_number}'")
+        return account_number  # Возвращаем исходную строку если меньше 4 цифр
+
+    try:
+        # Форматируем маскированный номер
+        masked_number = f"**{digits_only[-4:]}"
+        logger.info(f"Account masked successfully: {account_number} -> {masked_number}")
+        return masked_number
+    except Exception as e:
+        logger.error(f"Error masking account {account_number}: {e}")
+        return account_number  # Возвращаем исходную строку при ошибке
+
+
+def mask_financial_data(data: str) -> str:
+    """
+    Универсальная функция для маскирования финансовых данных.
+    Автоматически определяет тип данных (карта или счет) по количеству цифр.
+    """
+    logger.debug(f"Starting universal financial data masking: {data}")
+
+    if data is None:
+        return ""
+
+    if not isinstance(data, str):
+        return str(data)
+
+    # Извлекаем цифры
+    digits_only = ''.join(filter(str.isdigit, data))
+
+    if len(digits_only) == 16:
+        logger.debug("Detected card number by digit count (16)")
+        return get_mask_card_number(data)
+    elif len(digits_only) >= 4:
+        logger.debug(f"Detected account number by digit count ({len(digits_only)})")
+        return get_mask_account(data)
+    else:
+        logger.debug(f"Unable to determine data type - only {len(digits_only)} digits found")
+        return data
