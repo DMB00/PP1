@@ -16,16 +16,19 @@ class FinancialDataReader:
     def read_csv_file(self, file_path: str) -> pd.DataFrame:
         """
         Считывание данных из CSV файла
-
-        Args:
-            file_path (str): Путь к CSV файлу
-
-        Returns:
-            pd.DataFrame: DataFrame с транзакциями
         """
         try:
             logger.info(f"Чтение CSV файла: {file_path}")
-            df = pd.read_csv(file_path, delimiter=';')
+            # Попробуйте разные кодировки
+            try:
+                df = pd.read_csv(file_path, delimiter=';', encoding='utf-8')
+            except UnicodeDecodeError:
+                # Если UTF-8 не работает, пробуем другие кодировки
+                try:
+                    df = pd.read_csv(file_path, delimiter=';', encoding='cp1251')
+                except UnicodeDecodeError:
+                    df = pd.read_csv(file_path, delimiter=';', encoding='latin1')
+
             logger.info(f"Успешно прочитано {len(df)} записей из CSV")
             return df
         except Exception as e:

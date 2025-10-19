@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 import os
 import tempfile
-from financial_reader import FinancialDataReader
+from src.financial_reader import FinancialDataReader
 
 
 class TestFinancialDataReader:
