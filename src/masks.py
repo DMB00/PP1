@@ -1,6 +1,20 @@
-from .logger_config import setup_logger
+# src/masks.py
+import logging
 
-# Создаем логгер для модуля masks с принудительным пересозданием
+
+# Создаем простой логгер без конфигурации
+def setup_logger(name, force_recreate=False):
+    """Создает простой логгер"""
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    return logger
+
+
 logger = setup_logger('masks', force_recreate=True)
 
 
@@ -84,30 +98,3 @@ def get_mask_account(account_number: str) -> str:
     except Exception as e:
         logger.error(f"Error masking account {account_number}: {e}")
         return account_number  # Возвращаем исходную строку при ошибке
-
-
-def mask_financial_data(data: str) -> str:
-    """
-    Универсальная функция для маскирования финансовых данных.
-    Автоматически определяет тип данных (карта или счет) по количеству цифр.
-    """
-    logger.debug(f"Starting universal financial data masking: {data}")
-
-    if data is None:
-        return ""
-
-    if not isinstance(data, str):
-        return str(data)
-
-    # Извлекаем цифры
-    digits_only = ''.join(filter(str.isdigit, data))
-
-    if len(digits_only) == 16:
-        logger.debug("Detected card number by digit count (16)")
-        return get_mask_card_number(data)
-    elif len(digits_only) >= 4:
-        logger.debug(f"Detected account number by digit count ({len(digits_only)})")
-        return get_mask_account(data)
-    else:
-        logger.debug(f"Unable to determine data type - only {len(digits_only)} digits found")
-        return data
