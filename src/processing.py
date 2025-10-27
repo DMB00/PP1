@@ -1,38 +1,108 @@
 """
-Модуль processing содержит функции для обработки транзакций.
+Модуль для обработки банковских операций.
+Содержит функции для фильтрации и анализа финансовых данных.
 """
 
-from datetime import datetime
+import re
+from collections import Counter
+from typing import List, Dict, Any
 
 
-def filter_by_state(transactions: list, state: str) -> list:
+def process_bank_search(data: List[Dict[str, Any]], search: str) -> List[Dict[str, Any]]:
     """
-    Фильтрует транзакции по статусу.
+    Фильтрует банковские операции по строке поиска в описании.
 
     Args:
-        transactions: список транзакций
-        state: статус для фильтрации
+        data: Список словарей с данными о банковских операциях
+        search: Строка для поиска в описании операций
 
     Returns:
-        list: отфильтрованный список
+        List[Dict[str, Any]]: Отфильтрованный список операций,
+                             где в описании найдена строка поиска
+
+    Example:
+        >>> operations = [{'description': 'Перевод организации'}, {'description': 'Оплата услуг'}]
+        >>> process_bank_search(operations, 'Перевод')
+        [{'description': 'Перевод организации'}]
     """
-    return [tx for tx in transactions if tx.get("state") == state]
+    if not data or not search:
+        return []
+
+    try:
+        # Создаем регулярное выражение для поиска (регистронезависимое)
+        pattern = re.compile(re.escape(search), re.IGNORECASE)
+
+        # Фильтруем операции, где описание соответствует поисковому запросу
+        filtered_operations = [
+            operation for operation in data
+            if operation.get('description') and pattern.search(str(operation['description']))
+        ]
+
+        return filtered_operations
+
+    except re.error as e:
+        # В случае ошибки в регулярном выражении возвращаем пустой список
+        print(f"Ошибка в регулярном выражении '{search}': {e}")
+        return []
+    except Exception as e:
+        print(f"Неожиданная ошибка при поиске: {e}")
+        return []
 
 
-def sort_by_date(transactions: list, ascending: bool = False) -> list:
+def count_operations_by_category(data: List[Dict[str, Any]], categories: List[str]) -> Dict[str, int]:
     """
-    Сортирует транзакции по дате.
+    Подсчитывает количество операций по заданным категориям.
 
     Args:
-        transactions: список транзакций
-        ascending: порядок сортировки (True - по возрастанию, False - по убыванию)
+        data: Список словарей с данными о банковских операциях
+        categories: Список категорий для подсчета
 
     Returns:
-        list: отсортированный список
+        Dict[str, int]: Словарь, где ключи - названия категорий,
+                       значения - количество операций в каждой категории
+
+    Example:
+        >>> operations = [{'description': 'Перевод'}, {'description': 'Оплата'}, {'description': 'Перевод'}]
+        >>> count_operations_by_category(operations, ['Перевод', 'Оплата', 'Вывод'])
+        {'Перевод': 2, 'Оплата': 1, 'Вывод': 0}
     """
+    if not data:
+        return {category: 0 for category in categories}
 
-    def get_date_key(transaction):
-        date_str = transaction["date"]
-        return datetime.fromisoformat(date_str)
+    # Извлекаем все описания из операций
+    descriptions = [str(operation.get('description', '')).strip() for operation in data]
 
-    return sorted(transactions, key=get_date_key, reverse=not ascending)
+    # Используем Counter для подсчета всех операций
+    all_counts = Counter(descriptions)
+
+    # Создаем результат только для запрошенных категорий
+    result = {}
+    for category in categories:
+        # Приводим категорию к строке и убираем пробелы для сравнения
+        category_str = str(category).strip()
+        result[category] = all_counts.get(category_str, 0)
+
+    return result
+
+
+# Дополнительная утилитарная функция для получения всех уникальных категорий
+def get_all_categories(data: List[Dict[str, Any]]) -> List[str]:
+    """
+    Возвращает список всех уникальных категорий из данных об операциях.
+
+    Args:
+        data: Список словарей с данными о банковских операциях
+
+    Returns:
+        List[str]: Список уникальных категорий
+    """
+    if not data:
+        return []
+
+    categories = set()
+    for operation in data:
+        description = operation.get('description')
+        if description:
+            categories.add(str(description).strip())
+
+    return sorted(list(categories))

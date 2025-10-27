@@ -1,35 +1,56 @@
+import pytest
 import sys
 import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from masks import mask_card_number, mask_account_number
 
 
-def test_mask_card_number_edge_cases():
-    """Тест маскировки карты с граничными случаями"""
-    assert mask_card_number(None) == ""
-    assert mask_card_number("") == ""
-    assert mask_card_number("1234") == "1234"
-    assert mask_card_number("1234567890123456") == "1234 56** **** 3456"
+class TestMasks:
+    """Тесты для masks.py"""
 
+    def test_mask_card_number_normal(self):
+        """Тест маскировки номера карты - нормальный случай"""
+        result = mask_card_number("1234567812345678")
+        assert result == "1234 56** **** 5678"
 
-def test_mask_account_number_edge_cases():
-    """Тест маскировки счета с граничными случаями"""
-    assert mask_account_number(None) == ""
-    assert mask_account_number("") == ""
-    assert mask_account_number("123") == "123"
-    assert mask_account_number("1234567890") == "Счет **7890"
+    def test_mask_card_number_with_spaces(self):
+        """Тест маскировки номера карты с пробелами"""
+        result = mask_card_number("1234 5678 1234 5678")
+        assert result == "1234 56** **** 5678"
 
+    def test_mask_card_number_short(self):
+        """Тест маскировки короткого номера карты"""
+        result = mask_card_number("1234")
+        assert result == "1234"
 
-def test_mask_functions_consistency():
-    """Тест согласованности функций маскировки"""
-    # Карты должны маскироваться одинаково
-    card1 = mask_card_number("1234567812345678")
-    card2 = mask_card_number("1234567812345678")
-    assert card1 == card2
+    def test_mask_card_number_empty(self):
+        """Тест маскировки пустого номера карты"""
+        result = mask_card_number("")
+        assert result == ""
 
-    # Счета должны маскироваться одинаково
-    account1 = mask_account_number("12345678901234567890")
-    account2 = mask_account_number("12345678901234567890")
-    assert account1 == account2
+    def test_mask_card_number_none(self):
+        """Тест маскировки None"""
+        result = mask_card_number(None)
+        assert result == ""
+
+    def test_mask_account_number_normal(self):
+        """Тест маскировки номера счета - нормальный случай"""
+        result = mask_account_number("1234567890123456")
+        assert result == "Счет **3456"
+
+    def test_mask_account_number_short(self):
+        """Тест маскировки короткого номера счета"""
+        result = mask_account_number("123")
+        assert result == "123"
+
+    def test_mask_account_number_empty(self):
+        """Тест маскировки пустого номера счета"""
+        result = mask_account_number("")
+        assert result == ""
+
+    def test_mask_account_number_none(self):
+        """Тест маскировки None"""
+        result = mask_account_number(None)
+        assert result == ""

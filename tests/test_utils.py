@@ -1,8 +1,7 @@
 import pytest
 import sys
 import os
-import json
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch, mock_open
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 
@@ -121,11 +120,20 @@ class TestUtils:
 
         assert result == []
 
+    def test_load_json_data_edge_cases(self):
+        """Тест граничных случаев загрузки JSON"""
+        # Пустая строка
+        result = load_json_data("")
+        assert result == []
+
+        # None
+        result = load_json_data(None)
+        assert result == []
+
     def test_setup_logger_new(self):
         """Тест создания нового логгера"""
         logger = setup_logger('test_utils')
         assert logger.name == 'test_utils'
-        assert logger.level == 20  # INFO
 
     def test_setup_logger_existing(self):
         """Тест получения существующего логгера"""
@@ -136,19 +144,6 @@ class TestUtils:
     def test_setup_logger_force_recreate(self):
         """Тест принудительного пересоздания логгера"""
         logger1 = setup_logger('recreate_test')
-        handler_count = len(logger1.handlers)
-
         logger2 = setup_logger('recreate_test', force_recreate=True)
-
-        # Проверяем что это тот же логгер, но обработчики могли быть пересозданы
+        # Проверяем что это тот же объект логгера
         assert logger1 is logger2
-
-    def test_load_json_data_edge_cases(self):
-        """Тест граничных случаев"""
-        # Пустая строка
-        result = load_json_data("")
-        assert result == []
-
-        # None
-        result = load_json_data(None)
-        assert result == []

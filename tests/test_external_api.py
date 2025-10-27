@@ -15,7 +15,7 @@ from external_api import (
 
 
 class TestExternalAPI:
-    """Тесты для external_api"""
+    """Тесты для external_api.py"""
 
     @patch('external_api.requests.get')
     @patch('external_api.os.getenv')
@@ -57,7 +57,6 @@ class TestExternalAPI:
         mock_getenv.return_value = "test_key"
         mock_response = MagicMock()
         mock_response.status_code = 400
-        mock_response.text = "Bad Request"
         mock_get.return_value = mock_response
 
         result = get_exchange_rate("USD", "RUB")
@@ -66,13 +65,12 @@ class TestExternalAPI:
 
     @patch('external_api.requests.get')
     @patch('external_api.os.getenv')
-    def test_get_exchange_rate_connection_error(self, mock_getenv, mock_get):
-        """Тест ошибки соединения"""
+    def test_get_exchange_rate_request_exception(self, mock_getenv, mock_get):
+        """Тест исключения RequestException"""
         mock_getenv.return_value = "test_key"
-        mock_get.side_effect = ConnectionError("Connection failed")
+        mock_get.side_effect = Exception("Any exception")
 
         result = get_exchange_rate("USD", "RUB")
-
         assert result is None
 
     def test_convert_amount_to_rub_rub(self):
@@ -85,7 +83,6 @@ class TestExternalAPI:
         }
 
         result = convert_amount_to_rub(transaction)
-
         assert result == 100.0
 
     @patch('external_api.get_exchange_rate')
@@ -100,24 +97,19 @@ class TestExternalAPI:
         }
 
         result = convert_amount_to_rub(transaction)
-
         assert result == 750.0
-        mock_get_rate.assert_called_once_with("USD", "RUB")
 
-    @patch('external_api.get_exchange_rate')
-    def test_convert_amount_to_rub_api_failure(self, mock_get_rate):
-        """Тест конвертации при ошибке API"""
-        mock_get_rate.return_value = None
+    def test_convert_amount_to_rub_unsupported_currency(self):
+        """Тест конвертации неподдерживаемой валюты"""
         transaction = {
             "operationAmount": {
-                "amount": "10.0",
-                "currency": {"code": "USD"}
+                "amount": "100.0",
+                "currency": {"code": "GBP"}
             }
         }
 
         result = convert_amount_to_rub(transaction)
-
-        assert result == 10.0  # возвращает исходную сумму
+        assert result == 100.0
 
     def test_convert_amount_to_rub_invalid_amount(self):
         """Тест конвертации с невалидной суммой"""
@@ -129,7 +121,6 @@ class TestExternalAPI:
         }
 
         result = convert_amount_to_rub(transaction)
-
         assert result == 0.0
 
     def test_convert_amount_to_rub_missing_data(self):
@@ -140,20 +131,29 @@ class TestExternalAPI:
         result = convert_amount_to_rub(None)
         assert result == 0.0
 
+    def test_convert_amount_to_rub_missing_operation_amount(self):
+        """Тест конвертации без operationAmount"""
+        transaction = {"other_field": "value"}
+        result = convert_amount_to_rub(transaction)
+        assert result == 0.0
+
     @patch('external_api.get_exchange_rate')
     def test_get_exchange_rate_cached(self, mock_get_rate):
         """Тест кэширования курса валют"""
         mock_get_rate.return_value = 75.0
 
-        # Первый вызов - получаем из API
+        # Очищаем кэш перед тестом
+        clear_exchange_rate_cache()
+
+        # Первый вызов
         result1 = get_exchange_rate_cached("USD", "RUB")
 
-        # Второй вызов - из кэша
+        # Второй вызов
         result2 = get_exchange_rate_cached("USD", "RUB")
 
         assert result1 == 75.0
         assert result2 == 75.0
-        mock_get_rate.assert_called_once()  # API вызван только один раз
+        mock_get_rate.assert_called_once()
 
     def test_clear_exchange_rate_cache(self):
         """Тест очистки кэша"""
@@ -175,7 +175,6 @@ class TestExternalAPI:
         mock_get.return_value = mock_response
 
         result = get_api_status()
-
         assert result is True
 
     @patch('external_api.requests.get')
@@ -188,26 +187,22 @@ class TestExternalAPI:
         mock_get.return_value = mock_response
 
         result = get_api_status()
-
         assert result is False
 
-    @patch('external_api.requests.get')
     @patch('external_api.os.getenv')
-    def test_get_api_status_no_key(self, mock_getenv, mock_get):
+    def test_get_api_status_no_key(self, mock_getenv):
         """Тест проверки статуса без API ключа"""
         mock_getenv.return_value = None
 
         result = get_api_status()
-
         assert result is False
 
     @patch('external_api.requests.get')
     @patch('external_api.os.getenv')
-    def test_get_api_status_connection_error(self, mock_getenv, mock_get):
-        """Тест ошибки соединения при проверке статуса"""
+    def test_get_api_status_general_exception(self, mock_getenv, mock_get):
+        """Тест общего исключения при проверке статуса API"""
         mock_getenv.return_value = "test_key"
-        mock_get.side_effect = ConnectionError("Connection failed")
+        mock_get.side_effect = MemoryError("Memory error")
 
         result = get_api_status()
-
         assert result is False

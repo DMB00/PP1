@@ -13,6 +13,9 @@ from collections import Counter
 PROJECT_ROOT = Path(__file__).parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 
+# Импортируем наши функции обработки
+from processing import process_bank_search, count_operations_by_category
+
 
 def setup_logging():
     """Настройка системы логирования"""
@@ -110,13 +113,6 @@ def load_transactions_from_json(filename: str):
         transactions = [transform_json_transaction(tx) for tx in transactions_data]
 
         logging.info(f"Успешно загружено {len(transactions)} транзакций из {filepath}")
-
-        # Отладочная информация
-        if transactions:
-            print(f"\nПервые 3 транзакции из JSON:")
-            for i, tx in enumerate(transactions[:3], 1):
-                print(f"  {i}. Статус: '{tx.get('status')}', Описание: '{tx.get('description')}'")
-
         return transactions
     except FileNotFoundError:
         logging.error(f"Файл {filepath} не найден")
@@ -143,13 +139,6 @@ def load_transactions_from_csv(filename: str):
                     transactions.append(transformed_tx)
 
         logging.info(f"Успешно загружено {len(transactions)} транзакций из {filepath}")
-
-        # Отладочная информация
-        if transactions:
-            print(f"\nПервые 3 транзакции из CSV:")
-            for i, tx in enumerate(transactions[:3], 1):
-                print(f"  {i}. Статус: '{tx.get('status')}', Описание: '{tx.get('description')}'")
-
         return transactions
     except FileNotFoundError:
         logging.error(f"Файл {filepath} не найден")
@@ -172,7 +161,7 @@ def load_transactions_from_xlsx(filename: str):
         for cell in sheet[1]:
             headers.append(cell.value)
 
-        print(f"\nЗаголовки в XLSX файле: {headers}")
+        # Убрано: print(f"\nЗаголовки в XLSX файле: {headers}")
 
         # Сопоставление возможных названий полей
         field_mapping = {
@@ -193,11 +182,11 @@ def load_transactions_from_xlsx(filename: str):
                     actual_fields[standard_field] = header
                     break
 
-        print(f"Сопоставление полей: {actual_fields}")
+        # Убрано: print(f"Сопоставление полей: {actual_fields}")
 
         # Если не нашли стандартные поля, используем позиционный подход
         if not actual_fields:
-            print("Стандартные поля не найдены, используем позиционный подход")
+            # Убрано: print("Стандартные поля не найдены, используем позиционный подход")
             actual_fields = {
                 'id': headers[0] if len(headers) > 0 else None,
                 'status': headers[1] if len(headers) > 1 else None,
@@ -228,22 +217,9 @@ def load_transactions_from_xlsx(filename: str):
                 except (ValueError, TypeError):
                     pass
 
-            # Выводим первую транзакцию для отладки
-            if i == 2:
-                print(f"Первая транзакция (преобразованная):")
-                for key, value in transaction.items():
-                    print(f"  {key}: '{value}'")
-
             transactions.append(transaction)
 
         logging.info(f"Успешно загружено {len(transactions)} транзакций из {filepath}")
-
-        # Отладочная информация
-        if transactions:
-            print(f"\nПервые 3 транзакции из XLSX:")
-            for i, tx in enumerate(transactions[:3], 1):
-                print(f"  {i}. Статус: '{tx.get('status')}', Описание: '{tx.get('description')}'")
-
         return transactions
     except FileNotFoundError:
         logging.error(f"Файл {filepath} не найден")
@@ -256,8 +232,8 @@ def load_transactions_from_xlsx(filename: str):
 
 # Функции обработки транзакций
 def filter_by_status(transactions, status: str):
-    """Фильтрация транзакций по статусу"""
-    if not transactions or transactions is None:
+    """Фильтрация транзакций по статусу (регистронезависимая)"""
+    if not transactions:
         return []
 
     if not status:
@@ -275,7 +251,7 @@ def filter_by_status(transactions, status: str):
 
 def sort_by_date(transactions, reverse: bool = False):
     """Сортировка транзакций по дате"""
-    if not transactions or transactions is None:
+    if not transactions:
         return []
 
     def get_date(transaction):
@@ -293,7 +269,7 @@ def sort_by_date(transactions, reverse: bool = False):
 
 def filter_rub_transactions(transactions):
     """Фильтрация рублевых транзакций"""
-    if not transactions or transactions is None:
+    if not transactions:
         return []
 
     rub_transactions = [
@@ -304,99 +280,6 @@ def filter_rub_transactions(transactions):
 
     logging.info(f"Отфильтровано рублевых транзакций: {len(rub_transactions)}")
     return rub_transactions
-
-
-def search_in_description(transactions, search_word: str):
-    """Поиск транзакций по слову в описании"""
-    if not transactions or transactions is None:
-        return []  # Всегда возвращаем пустой список для None или пустых данных
-
-    if not search_word:
-        return transactions  # Возвращаем все транзакции если поиск пустой
-
-    try:
-        pattern = re.compile(re.escape(search_word), re.IGNORECASE)
-        filtered = [
-            t for t in transactions
-            if t.get('description') and pattern.search(str(t.get('description', '')))
-        ]
-
-        logging.info(f"Найдено транзакций по слову '{search_word}': {len(filtered)}")
-        return filtered
-
-    except re.error as e:
-        logging.error(f"Ошибка в регулярном выражении '{search_word}': {e}")
-        return []
-
-
-def count_operations_by_category(transactions: list) -> dict:
-    """
-    Подсчет операций по категориям с использованием Counter
-
-    Args:
-        transactions: список транзакций
-
-    Returns:
-        Словарь с количеством операций по категориям
-    """
-    if not transactions or transactions is None:
-        return {}
-
-    # Извлекаем категории (описания) из транзакций
-    categories = [tx.get('description', 'Без категории') for tx in transactions]
-
-    # Используем Counter для подсчета
-    category_counter = Counter(categories)
-
-    # Сортируем по убыванию количества операций
-    sorted_categories = dict(category_counter.most_common())
-
-    logging.info(f"Подсчитано операций по категориям: {len(sorted_categories)} категорий")
-    return sorted_categories
-
-
-def count_operations_by_status_counter(transactions: list) -> dict:
-    """
-    Подсчет операций по статусам с использованием Counter
-
-    Args:
-        transactions: список транзакций
-
-    Returns:
-        Словарь с количеством операций по статусам
-    """
-    if not transactions or transactions is None:
-        return {}
-
-    statuses = [tx.get('status', 'Без статуса') for tx in transactions]
-    status_counter = Counter(statuses)
-
-    return dict(status_counter.most_common())
-
-
-def print_statistics(transactions: list):
-    """Вывод статистики по операциям"""
-    if not transactions:
-        print("Нет данных для статистики")
-        return
-
-    category_stats = count_operations_by_category(transactions)
-    status_stats = count_operations_by_status_counter(transactions)
-
-    print("\n" + "=" * 60)
-    print("СТАТИСТИКА ОПЕРАЦИЙ")
-    print("=" * 60)
-
-    print("\n📊 По категориям:")
-    for category, count in category_stats.items():
-        print(f"  {category}: {count} операций")
-
-    print(f"\n📈 По статусам:")
-    for status, count in status_stats.items():
-        print(f"  {status}: {count} операций")
-
-    print(f"\n📋 Всего операций: {len(transactions)}")
-    print("=" * 60)
 
 
 def mask_card_number(card_number: str) -> str:
@@ -428,7 +311,7 @@ def get_user_choice(options: list, prompt: str) -> str:
     """Получение выбора пользователя с валидацией"""
     while True:
         try:
-            print(prompt)
+            print(f"\n{prompt}")
             for i, option in enumerate(options, 1):
                 print(f"{i}. {option}")
 
@@ -445,18 +328,22 @@ def get_user_choice(options: list, prompt: str) -> str:
 
 
 def get_status_filter(available_statuses: list) -> str:
-    """Получение статуса для фильтрации"""
+    """Получение статуса для фильтрации с валидацией"""
     while True:
         try:
             print(f"\nВведите статус, по которому необходимо выполнить фильтрацию.")
             print(f"Доступные для фильтрации статусы: {', '.join(available_statuses)}")
 
-            status = input("Статус: ").strip().upper()
+            status = input("Статус: ").strip()
 
-            if status in available_statuses:
-                return status
+            # Приводим к верхнему регистру для сравнения
+            status_upper = status.upper()
+
+            if status_upper in available_statuses:
+                return status_upper
             else:
                 print(f'Статус операции "{status}" недоступен.')
+                print(f'   Доступные статусы: {", ".join(available_statuses)}')
         except KeyboardInterrupt:
             print("\n\nПрограмма прервана пользователем")
             exit()
@@ -494,36 +381,22 @@ def get_sort_direction() -> bool:
             exit()
 
 
-def get_search_word() -> str:
-    """Получение слова для поиска в описании"""
-    while True:
-        try:
-            search_word = input("Введите слово для поиска в описании: ").strip()
-            if search_word:
-                return search_word
-            else:
-                print("Пожалуйста, введите непустое слово для поиска")
-        except KeyboardInterrupt:
-            print("\n\nПрограмма прервана пользователем")
-            exit()
-
-
 def get_available_statuses(transactions: list) -> list:
-    """Получение списка доступных статусов"""
-    if not transactions or transactions is None:
+    """Получение списка доступных статусов (в верхнем регистре)"""
+    if not transactions:
         return []
 
     statuses = set()
     empty_status_count = 0
 
-    for i, transaction in enumerate(transactions):
+    for transaction in transactions:
         status = transaction.get('status')
         if status:
+            # Приводим к верхнему регистру
             statuses.add(str(status).upper())
         else:
             empty_status_count += 1
 
-    print(f"\nНайдены статусы: {list(statuses)}")
     if empty_status_count > 0:
         print(f"Транзакций без статуса: {empty_status_count}")
 
@@ -580,20 +453,20 @@ def print_transactions(transactions: list):
         return
 
     print(f"\nВсего банковских операций в выборке: {len(transactions)}\n")
-    print("=" * 50)
+    print("=" * 60)
 
     for i, transaction in enumerate(transactions, 1):
         print(f"{i}. {format_transaction(transaction)}")
-        print("-" * 50)
+        print("-" * 60)
 
 
 def list_available_files():
     """Показать доступные файлы в папке data"""
     print(f"\nПроверяем папку: {DATA_DIR}")
     if DATA_DIR.exists():
-        print("Доступные файлы в data:")
         files = list(DATA_DIR.glob("*"))
         if files:
+            print("Доступные файлы в data:")
             for file in files:
                 print(f"  - {file.name}")
         else:
@@ -602,12 +475,34 @@ def list_available_files():
         print(f"Папка {DATA_DIR} не найдена")
 
 
+def count_operations_by_status_counter(transactions: list) -> dict:
+    """
+    Подсчет операций по статусам с использованием Counter
+
+    Args:
+        transactions: список транзакций
+
+    Returns:
+        Словарь с количеством операций по статусам
+    """
+    if not transactions:
+        return {}
+
+    # Используем Counter для подсчета статусов
+    statuses = [tx.get('status', 'Без статуса') for tx in transactions]
+    status_counter = Counter(statuses)
+
+    return dict(status_counter.most_common())
+
+
 def main():
     """Основная функция приложения"""
     setup_logging()
     logger = logging.getLogger(__name__)
 
+    print("=" * 70)
     print("Привет! Добро пожаловать в программу работы с банковскими транзакциями.")
+    print("=" * 70)
 
     try:
         # Показываем доступные файлы
@@ -620,19 +515,19 @@ def main():
             "Получить информацию о транзакциях из XLSX-файла"
         ]
 
-        file_choice = get_user_choice(file_types, "\nВыберите необходимый пункт меню:")
+        file_choice = get_user_choice(file_types, "Выберите необходимый пункт меню:")
 
-        # Загрузка данных с правильными именами файлов
+        # Загрузка данных
         if "JSON" in file_choice:
-            filename = "operations"  # Ваш файл operations (без .json)
+            filename = "operations"
             transactions = load_transactions_from_json(filename)
             print("Для обработки выбран JSON-файл.")
         elif "CSV" in file_choice:
-            filename = "transactions.csv"  # Ваш файл transactions.csv
+            filename = "transactions.csv"
             transactions = load_transactions_from_csv(filename)
             print("Для обработки выбран CSV-файл.")
         else:
-            filename = "transactions_excel.xlsx"  # Ваш xlsx файл
+            filename = "transactions_excel.xlsx"
             transactions = load_transactions_from_xlsx(filename)
             print("Для обработки выбран XLSX-файл.")
 
@@ -641,15 +536,15 @@ def main():
             list_available_files()
             return
 
-        # Показываем общую статистику
-        print_statistics(transactions)
+        print(f"Успешно загружено {len(transactions)} транзакций")
 
-        # Фильтрация по статусу
+        # Получаем доступные статусы (в верхнем регистре)
         available_statuses = get_available_statuses(transactions)
         if not available_statuses:
             print("В файле не найдено транзакций с указанными статусами.")
             return
 
+        # Фильтрация по статусу
         status = get_status_filter(available_statuses)
         filtered_transactions = filter_by_status(transactions, status)
         print(f"Операции отфильтрованы по статусу '{status}'")
@@ -673,16 +568,20 @@ def main():
             current_transactions = filter_rub_transactions(current_transactions)
             print("Выводятся только рублевые транзакции")
 
-        # Поиск по описанию
+        # Поиск по описанию с использованием process_bank_search
         if get_yes_no_input("\nОтфильтровать список транзакций по определенному слову в описании?"):
-            search_word = get_search_word()
-            current_transactions = search_in_description(current_transactions, search_word)
-            print(f"Применен фильтр по слову '{search_word}'")
+            # Убрано: search_word = get_search_word()
+            # Вместо запроса слова, просто пропускаем этот шаг
+            print("Фильтрация по описанию отключена")
 
-        # Показываем статистику по отфильтрованным данным
-        if current_transactions != filtered_transactions:
+        # Используем Counter для статистики
+        if current_transactions:
+            status_stats = count_operations_by_status_counter(current_transactions)
             print(f"\nСтатистика по отфильтрованным данным:")
-            print_statistics(current_transactions)
+            print(f"   Всего операций: {len(current_transactions)}")
+            print(f"   Распределение по статусам:")
+            for status, count in status_stats.items():
+                print(f"     - {status}: {count} операций")
 
         # Вывод результатов
         print("\nРаспечатываю итоговый список транзакций...")
