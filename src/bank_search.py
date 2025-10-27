@@ -1,131 +1,79 @@
-# src/bank_search.py
 import re
-from typing import List, Dict
 import logging
+from collections import Counter
+from typing import List, Dict, Any
 
 
-# Создаем простой логгер
-def setup_logger(name, force_recreate=False):
-    """Создает простой логгер"""
-    logger = logging.getLogger(name)
-    if not logger.handlers:
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
-    return logger
+def your_problem_method(self, input_data):
+    """Метод который падает с TypeError"""
+    # Добавляем проверку типа
+    if not isinstance(input_data, (str, bytes)):
+        if input_data is None:
+            input_data = ""
+        else:
+            input_data = str(input_data)  # конвертируем в строку
 
-
-logger = setup_logger('bank_search', force_recreate=True)
-
-
-def process_bank_search(data: List[Dict], search: str) -> List[Dict]:
+def process_bank_search(data: List[Dict[str, Any]], search: str) -> List[Dict[str, Any]]:
     """
-    Фильтрует список банковских операций по строке поиска в описании.
+    Поиск операций по строке в описании с использованием регулярных выражений
     """
-    logger.info(f"Starting bank search with query: '{search}'")
-
-    # Обработка None и невалидных входных данных
-    if data is None:
-        logger.warning("None data provided")
-        return []
+    logger = logging.getLogger(__name__)
+    logger.info(f"Поиск операций по строке: '{search}'")
 
     if not data:
-        logger.warning("Empty data list provided")
         return []
 
-    if search is None:
-        logger.warning("None search query provided")
-        return []
-
-    search = search.strip()
     if not search:
-        logger.warning("Empty search query provided")
         return data
 
     try:
-        # Создаем регулярное выражение для поиска
         pattern = re.compile(re.escape(search), re.IGNORECASE)
-        logger.debug(f"Compiled regex pattern: {pattern.pattern}")
-
-        filtered_data = []
+        filtered_operations = []
 
         for operation in data:
-            # Проверяем наличие поля 'description' и ищем в нем
-            if operation.get('description'):
-                description = str(operation['description'])
+            description = operation.get('description', '')
+            if pattern.search(description):
+                filtered_operations.append(operation)
 
-                # Ищем совпадение с помощью регулярного выражения
-                if pattern.search(description):
-                    filtered_data.append(operation)
-
-        logger.info(f"Search completed. Found {len(filtered_data)} matching operations")
-        return filtered_data
+        logger.info(f"Найдено {len(filtered_operations)} операций по запросу '{search}'")
+        return filtered_operations
 
     except re.error as e:
-        logger.error(f"Regex error with pattern '{search}': {e}")
-        return []
-    except Exception as e:
-        logger.error(f"Unexpected error during bank search: {e}")
+        logger.error(f"Ошибка в регулярном выражении '{search}': {e}")
         return []
 
 
-def process_bank_operations(data: List[Dict], categories: List[str]) -> Dict[str, int]:
+def process_bank_operations(data: List[Dict[str, Any]], categories: List[str]) -> Dict[str, int]:
     """
-    Подсчитывает количество операций по категориям.
+    Подсчет операций по категориям с использованием Counter
     """
-    logger.info(f"Starting bank operations processing for categories: {categories}")
-
-    # Обработка невалидных входных данных
-    if data is None:
-        logger.warning("None data provided")
-        return {}
-
-    if categories is None:
-        logger.warning("None categories provided")
-        return {}
-
-    if not categories:
-        logger.warning("Empty categories list provided")
-        return {}
+    logger = logging.getLogger(__name__)
+    logger.info(f"Подсчет операций по категориям: {categories}")
 
     if not data:
-        logger.warning("Empty data list provided")
         return {category: 0 for category in categories}
 
-    try:
-        # Создаем словарь для подсчета с нулевыми значениями для всех категорий
-        category_count = {category: 0 for category in categories}
-        logger.debug(f"Initialized category count: {category_count}")
+    # Используем Counter для подсчета всех категорий
+    all_categories = [op.get('description', 'Без категории') for op in data]
+    category_counter = Counter(all_categories)
 
-        # Подсчитываем операции по категориям
-        operations_processed = 0
-        operations_with_description = 0
+    # Фильтруем только нужные категории
+    result = {}
+    for category in categories:
+        result[category] = category_counter.get(category, 0)
 
-        for operation in data:
-            operations_processed += 1
+    logger.info(f"Результат подсчета по категориям: {result}")
+    return result
 
-            # Проверяем наличие описания
-            if not operation.get('description'):
-                continue
 
-            operations_with_description += 1
-            description = str(operation['description']).lower()
+def process_bank_operations_advanced(data: List[Dict[str, Any]]) -> Dict[str, int]:
+    """
+    Расширенный подсчет операций по всем категориям
+    """
+    if not data:
+        return {}
 
-            # Проверяем каждую категорию
-            for category in categories:
-                category_lower = category.lower()
-                # Простой поиск подстроки (без границ слов)
-                if category_lower in description:
-                    category_count[category] += 1
+    categories = [op.get('description', 'Без категории') for op in data]
+    category_counter = Counter(categories)
 
-        logger.info(f"Processing completed. Processed {operations_processed} operations, "
-                    f"{operations_with_description} with descriptions")
-        logger.info(f"Category counts: {category_count}")
-
-        return category_count
-
-    except Exception as e:
-        logger.error(f"Unexpected error during bank operations processing: {e}")
-        return {category: 0 for category in categories} if categories else {}
+    return dict(category_counter.most_common())

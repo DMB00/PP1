@@ -1,9 +1,28 @@
 import json
 import os
 from typing import List, Dict, Any
-from .logger_config import setup_logger
+import logging
 
-# Создаем логгер для модуля utils с принудительным пересозданием
+
+# Создаем логгер напрямую вместо относительного импорта
+def setup_logger(name, force_recreate=False):
+    """Создает простой логгер"""
+    logger = logging.getLogger(name)
+    if not logger.handlers or force_recreate:
+        # Удаляем существующие обработчики если нужно пересоздать
+        if force_recreate and logger.handlers:
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+    return logger
+
+
+# Создаем логгер для модуля utils
 logger = setup_logger('utils', force_recreate=True)
 
 

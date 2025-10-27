@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 import logging
 
 
@@ -19,10 +20,34 @@ logger = setup_logger('financial_reader', force_recreate=True)
 
 
 class FinancialDataReader:
-    """Класс для считывания финансовых операций из CSV и XLSX файлов"""
+    """Класс для считывания финансовых операций из JSON, CSV и XLSX файлов"""
 
     def __init__(self):
         self.transactions = []
+
+    def read_json_file(self, file_path: str) -> pd.DataFrame:
+        """
+        Считывание данных из JSON файла
+        """
+        try:
+            logger.info(f"Чтение JSON файла: {file_path}")
+
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Преобразуем JSON в DataFrame
+            if isinstance(data, list):
+                df = pd.DataFrame(data)
+            else:
+                # Если JSON объект, а не массив
+                df = pd.DataFrame([data])
+
+            logger.info(f"Успешно прочитано {len(df)} записей из JSON")
+            return df
+
+        except Exception as e:
+            logger.error(f"Ошибка при чтении JSON файла: {e}")
+            raise
 
     def read_csv_file(self, file_path: str) -> pd.DataFrame:
         """
@@ -70,16 +95,17 @@ class FinancialDataReader:
 
         for _, row in df.iterrows():
             try:
+                # Создаем транзакцию с учетом возможных различий в структуре данных
                 transaction = {
-                    'id': row['id'],
-                    'state': row['state'],
-                    'date': row['date'],
-                    'amount': float(row['amount']),
-                    'currency_name': row['currency_name'],
-                    'currency_code': row['currency_code'],
-                    'from_account': row.get('from', ''),
-                    'to_account': row.get('to', ''),
-                    'description': row['description'],
+                    'id': row.get('id', ''),
+                    'state': row.get('state', ''),
+                    'date': row.get('date', ''),
+                    'amount': float(row.get('amount', 0)),
+                    'currency_name': row.get('currency_name', ''),
+                    'currency_code': row.get('currency_code', ''),
+                    'from_account': row.get('from', row.get('from_account', '')),
+                    'to_account': row.get('to', row.get('to_account', '')),
+                    'description': row.get('description', ''),
                     'source': source
                 }
                 transactions.append(transaction)
@@ -94,6 +120,10 @@ def display_transactions(transactions: list, limit: int = 5):
     """
     Отображение транзакций в удобном формате
     """
+    if not transactions:
+        print("Нет транзакций для отображения")
+        return
+
     print(f"\n{'=' * 80}")
     print(f"ФИНАНСОВЫЕ ОПЕРАЦИИ (первые {limit} из {len(transactions)})")
     print(f"{'=' * 80}")

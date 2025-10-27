@@ -2,18 +2,10 @@
 Модуль widget содержит функции для виджета операций.
 """
 
-from .masks import get_mask_account, get_mask_card_number
-
-
 def mask_account_card(account_info: str) -> str:
     """
     Маскирует номер счета или карты в переданной строке.
-
-    Args:
-        account_info: строка с информацией о счете или карте
-
-    Returns:
-        str: строка с замаскированным номером
+    Встроенная реализация без импорта из masks.
     """
     if not account_info:
         return ""
@@ -21,13 +13,19 @@ def mask_account_card(account_info: str) -> str:
     if "Счет" in account_info:
         # Обработка счета
         account_number = account_info.split("Счет")[-1].strip()
-        masked_number = get_mask_account(account_number)
-        return f"Счет {masked_number}"
+        # Встроенная маскировка счета
+        account_str = str(account_number).replace(' ', '')
+        if len(account_str) >= 4:
+            masked_number = f"**{account_str[-4:]}"
+            return f"Счет {masked_number}"
+        return account_info
     else:
         # Обработка карты
         digits = "".join(filter(str.isdigit, account_info))
         if len(digits) == 16:
-            masked_number = get_mask_card_number(digits)
+            # Встроенная маскировка карты
+            card_str = digits.replace(' ', '')
+            masked_number = f"{card_str[:4]} {card_str[4:6]}** **** {card_str[-4:]}"
             text_part = "".join(filter(lambda x: not x.isdigit(), account_info)).strip()
             return f"{text_part} {masked_number}"
         return account_info
