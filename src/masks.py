@@ -1,56 +1,26 @@
-def get_mask_card_number(card_number: str) -> str:
-    """
-    Маскирует номер банковской карты.
+"""
+Модуль widget содержит функции для виджета операций.
+"""
 
-    Формат: XXXX XX** **** XXXX
-    Показываются первые 6 и последние 4 цифры, остальные заменяются на *
+def mask_card_number(card_number: str) -> str:
+    """Маскировка номера карты"""
+    if not card_number:
+        return ""
 
-    Args:
-        card_number (str): Номер карты (16 цифр)
+    card_str = str(card_number).replace(' ', '')
+    if len(card_str) < 16:
+        return str(card_number)
 
-    Returns:
-        str: Замаскированный номер карты
-
-    Raises:
-        ValueError: Если номер карты не состоит из 16 цифр
-    """
-    # Удаляем все пробелы и нецифровые символы
-    cleaned_number = "".join(filter(str.isdigit, card_number))
-
-    # Проверяем, что номер состоит из 16 цифр
-    if len(cleaned_number) != 16:
-        raise ValueError("Номер карты должен содержать 16 цифр")
-
-    # Маскируем номер: первые 6 и последние 4 цифры видимы, остальные *
-    masked = cleaned_number[:4] + " " + cleaned_number[4:6] + "** **** " + cleaned_number[-4:]
-
-    return masked
+    return f"{card_str[:4]} {card_str[4:6]}** **** {card_str[-4:]}"
 
 
-def get_mask_account(account_number: str) -> str:
-    """
-    Маскирует номер банковского счета.
+def mask_account_number(account_number: str) -> str:
+    """Маскировка номера счета"""
+    if not account_number:
+        return ""
 
-    Формат: **XXXX
-    Показываются только последние 4 цифры, остальные заменяются на *
+    account_str = str(account_number).replace(' ', '')
+    if len(account_str) < 4:
+        return str(account_number)
 
-    Args:
-        account_number (str): Номер счета
-
-    Returns:
-        str: Замаскированный номер счета
-
-    Raises:
-        ValueError: Если номер счета содержит меньше 4 цифр
-    """
-    # Удаляем все пробелы и нецифровые символы
-    cleaned_number = "".join(filter(str.isdigit, account_number))
-
-    # Проверяем, что номер содержит хотя бы 4 цифры
-    if len(cleaned_number) < 4:
-        raise ValueError("Номер счета должен содержать минимум 4 цифры")
-
-    # Маскируем номер: показываем только последние 4 цифры
-    masked = "**" + cleaned_number[-4:]
-
-    return masked
+    return f"Счет **{account_str[-4:]}"
